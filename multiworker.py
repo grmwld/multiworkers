@@ -34,9 +34,9 @@ class Worker(multiprocessing.Process):
                 break
             self.do(job)
 
-    def do(self, job):
+    def do(self, job_params):
         self.__result_queue.put(
-            job
+            job_params
         )
 
 
