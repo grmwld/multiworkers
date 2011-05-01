@@ -41,13 +41,13 @@ class Worker(multiprocessing.Process):
 
 
 class Controller:
-    def __init__(self, in_iterable, num_cpu, verbose):
-        self.__in_iterable = in_iterable
+    def __init__(self, input, num_cpu, verbose):
+        self.__input = input
         self.__num_cpu = num_cpu
         self.__verbose = verbose
         self.__work_queue = multiprocessing.Queue()
         self.__num_jobs = 0
-        for i in self.__in_iterable:
+        for i in self.__input:
             self.__work_queue.put({
                 'id': self.__num_jobs,
                 'job': i
@@ -69,7 +69,6 @@ class Controller:
 
     def __finish(self):
         self.__print_verbose('Finishing ...')
-        print self.__results
         self.__results.sort(cmp=lambda x,y: x['id'] - y['id'])
         for result in self.__results:
             print result
