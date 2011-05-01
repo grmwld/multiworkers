@@ -47,11 +47,9 @@ class Controller:
         self.__verbose = verbose
         self.__work_queue = multiprocessing.Queue()
         self.__num_jobs = 0
-        for i in self.__input:
-            self.__work_queue.put({
-                'id': self.__num_jobs,
-                'job': i
-            })
+        for param_set in self.__input:
+            param_set['id'] = self.__num_jobs
+            self.__work_queue.put(param_set)
             self.__num_jobs += 1
         self.__result_queue = multiprocessing.Queue()
         self.__results = []
@@ -93,5 +91,5 @@ class Controller:
 
 
 if __name__ == '__main__':
-    c = Controller(['lskdfjs', 'ksljdfs', 'ksjdnfs', 'ggtuna'], 1, True)
+    c = Controller([{'name':'lskdfjs'}, {'name':'ksljdfs'}, {'name':'ksjdnfs'}, {'name':'ggtuna'}], 1, True)
     c.start()
