@@ -6,7 +6,7 @@ from multiworker import Controller, Worker
 
 class CustomWorker(Worker):
     def __init__(self, work_queue, result_queue, verbose, global_params):
-        super(Worker, self).__init__(work_queue, result_queue, verbose, global_params)
+        Worker.__init__(self, work_queue, result_queue, verbose, global_params)
         print 'custom worker created'
 
 if __name__ == '__main__':
