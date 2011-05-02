@@ -42,11 +42,12 @@ class Worker(multiprocessing.Process):
 
 
 class Controller:
-    def __init__(self, jobs, global_params, num_cpu, verbose):
+    def __init__(self, jobs, global_params, num_cpu, verbose, worker_class=Worker):
         self._jobs = jobs
         self._global_params = global_params
         self._num_cpu = num_cpu
         self._verbose = verbose
+        self._worker_class = worker_class
         self._work_queue = multiprocessing.Queue()
         self._num_jobs = 0
         for job in self._jobs:
@@ -60,7 +61,7 @@ class Controller:
 
     def _init_workers(self):
         for i in range(self._num_cpu):
-            worker = Worker(
+            worker = self._worker_class(
                     self._work_queue,
                     self._result_queue,
                     self._verbose,
@@ -92,9 +93,3 @@ class Controller:
         finally:
             self._finish()
 
-
-if __name__ == '__main__':
-    global_params = {'fdsgdf':3, 'kgflgf':5}
-    jobs = [{'name':'lskdfjs'}, {'name':'ksljdfs'}, {'name':'ksjdnfs'}, {'name':'ggtuna'}]
-    c = Controller(jobs, global_params, 1, True)
-    c.start()
