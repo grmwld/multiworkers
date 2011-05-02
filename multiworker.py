@@ -14,8 +14,9 @@ import numpy
 
 
 class Worker(multiprocessing.Process):
-    def __init__(self, work_queue, result_queue, verbose):
+    def __init__(self, work_queue, result_queue, verbose, global_params):
         super(Worker, self).__init__()
+        self._global_params = global_params
         self._work_queue = work_queue
         self._result_queue = result_queue
         self._kill_received = False
@@ -35,19 +36,22 @@ class Worker(multiprocessing.Process):
             self.do(job)
 
     def do(self, job):
-        self._result_queue.put(job)
+        result = job
+        result.update(self._global_params)
+        self._result_queue.put(result)
 
 
 class Controller:
-    def __init__(self, input, num_cpu, verbose):
-        self._input = input
+    def __init__(self, jobs, global_params, num_cpu, verbose):
+        self._jobs = jobs
+        self._global_params = global_params
         self._num_cpu = num_cpu
         self._verbose = verbose
         self._work_queue = multiprocessing.Queue()
         self._num_jobs = 0
-        for param_set in self._input:
-            param_set['id'] = self._num_jobs
-            self._work_queue.put(param_set)
+        for job in self._jobs:
+            job['id'] = self._num_jobs
+            self._work_queue.put(job)
             self._num_jobs += 1
         self._result_queue = multiprocessing.Queue()
         self._results = []
@@ -59,7 +63,8 @@ class Controller:
             worker = Worker(
                     self._work_queue,
                     self._result_queue,
-                    self._verbose
+                    self._verbose,
+                    self._global_params
             )
             self._workers.append(worker)
 
@@ -89,5 +94,7 @@ class Controller:
 
 
 if __name__ == '__main__':
-    c = Controller([{'name':'lskdfjs'}, {'name':'ksljdfs'}, {'name':'ksjdnfs'}, {'name':'ggtuna'}], 1, True)
+    global_params = {'fdsgdf':3, 'kgflgf':5}
+    jobs = [{'name':'lskdfjs'}, {'name':'ksljdfs'}, {'name':'ksjdnfs'}, {'name':'ggtuna'}]
+    c = Controller(jobs, global_params, 1, True)
     c.start()
