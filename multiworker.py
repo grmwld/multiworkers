@@ -92,9 +92,3 @@ class Controller:
         finally:
             self._finish()
 
-
-if __name__ == '__main__':
-    global_params = {'fdsgdf':3, 'kgflgf':5}
-    jobs = [{'name':'lskdfjs'}, {'name':'ksljdfs'}, {'name':'ksjdnfs'}, {'name':'ggtuna'}]
-    c = Controller(jobs, global_params, 1, True)
-    c.start()
