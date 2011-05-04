@@ -71,9 +71,6 @@ class Controller:
 
     def _finish(self):
         self._print_verbose('Finishing ...')
-        self._results.sort(cmp=lambda x,y: x['id'] - y['id'])
-        for result in self._results:
-            print result
         self._print_verbose(' done !')
 
     def _print_verbose(self, msg):
