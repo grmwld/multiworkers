@@ -55,7 +55,6 @@ class Controller:
         for job in self._jobs:
             job['id'] = self._num_jobs
             self._work_queue.put(job)
-            self._work_queue.task_done()
             self._num_jobs += 1
         self._result_queue = multiprocessing.JoinableQueue()
         self._results = []
