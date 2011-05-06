@@ -31,7 +31,6 @@ class Worker(multiprocessing.Process):
         while not self._kill_received:
             try:
                 job = self._work_queue.get(True, 0.1)
-                self._work_queue.task_done()
             except Queue.Empty:
                 break
             self.do(job)
@@ -40,7 +39,6 @@ class Worker(multiprocessing.Process):
         result = job
         result.update(self._global_params)
         self._result_queue.put(result)
-        self._result_queue.task_done()
 
 
 class Controller:
@@ -50,13 +48,13 @@ class Controller:
         self._num_cpu = num_cpu
         self._verbose = verbose
         self._worker_class = worker_class
-        self._work_queue = multiprocessing.JoinableQueue()
+        self._work_queue = multiprocessing.Queue()
         self._num_jobs = 0
         for job in self._jobs:
             job['id'] = self._num_jobs
             self._work_queue.put(job)
             self._num_jobs += 1
-        self._result_queue = multiprocessing.JoinableQueue()
+        self._result_queue = multiprocessing.Queue()
         self._results = []
         self._workers = []
         self._init_workers()
@@ -86,7 +84,6 @@ class Controller:
                 worker.start()
             while len(self._results) < self._num_jobs:
                 self._results.append(self._result_queue.get())
-                self._result_queue.task_done()
         except Exception as err:
             traceback.print_exc()
         finally:
