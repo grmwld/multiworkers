@@ -31,12 +31,12 @@ class Worker(multiprocessing.Process):
         self._kill_received = True
 
     def run(self):
-        while not self._kill_received:
+        while (not (self._kill_received)) and (self._work_queue.empty()==False):
             try:
                 job = self._work_queue.get(True, 0.1)
-            except Queue.Empty:
+                self._result_queue.put(self.do(job))
+            except:
                 break
-            self._result_queue.put(self.do(job))
 
     def do(self, job):
         result = job
