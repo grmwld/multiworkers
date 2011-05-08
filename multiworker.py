@@ -33,12 +33,12 @@ class Worker(multiprocessing.Process):
                 job = self._work_queue.get(True, 0.1)
             except Queue.Empty:
                 break
-            self.do(job)
+            self._result_queue.put(self.do(job))
 
     def do(self, job):
         result = job
         result.update(self._global_params)
-        self._result_queue.put(result)
+        return result
 
 
 class Controller:
