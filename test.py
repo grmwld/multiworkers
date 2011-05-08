@@ -14,7 +14,8 @@ class CustomWorker(Worker):
     def do(self, job):
         result = job
         result.update(self._global_params)
-        time.sleep(random.random())
+        time.sleep(1 + random.random())
+        print 'done', job
         return result
 
 if __name__ == '__main__':
