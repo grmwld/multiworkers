@@ -27,13 +27,16 @@ class Worker(multiprocessing.Process):
             sys.stdout.write(msg)
             sys.stdout.flush()
 
+    def kill(self):
+        self._kill_received = True
+
     def run(self):
-        while not self._kill_received:
+        while (not (self._kill_received)) and (self._work_queue.empty()==False):
             try:
                 job = self._work_queue.get(True, 0.1)
-            except Queue.Empty:
+                self._result_queue.put(self.do(job))
+            except (Queue.Empty, KeyboardInterrupt):
                 break
-            self._result_queue.put(self.do(job))
 
     def do(self, job):
         result = job
@@ -42,7 +45,7 @@ class Worker(multiprocessing.Process):
 
 
 class Controller:
-    def __init__(self, jobs, global_params, num_cpu, verbose, worker_class=Worker):
+    def __init__(self, jobs, global_params, num_cpu, verbose, worker_class=Worker, debug=False):
         self._jobs = jobs
         self._global_params = global_params
         self._num_cpu = num_cpu
@@ -58,6 +61,7 @@ class Controller:
         self._results = []
         self._workers = []
         self._init_workers()
+        self._debug = debug
 
     def _init_workers(self):
         for i in range(self._num_cpu):
@@ -68,6 +72,10 @@ class Controller:
                     self._global_params
             )
             self._workers.append(worker)
+
+    def _cleanup(self):
+        for worker in self._workers:
+            worker.kill()
 
     def _finish(self):
         self._print_verbose('Finishing ...')
@@ -84,8 +92,14 @@ class Controller:
                 worker.start()
             while len(self._results) < self._num_jobs:
                 self._results.append(self._result_queue.get())
-        except Exception as err:
-            traceback.print_exc()
+        except KeyboardInterrupt:
+            self._cleanup()
+            sys.exit(-1)
+        except Exception:
+            self._cleanup()
+            if self._debug:
+                traceback.print_exc()
+
         finally:
             self._finish()
 
