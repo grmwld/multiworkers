@@ -75,7 +75,7 @@ class Controller:
 
     def _cleanup(self):
         for worker in self._workers:
-            self._print_verbose('killing ' + str(worker))
+            self._print_verbose('killing ' + str(worker) + '\n')
             worker.kill()
             time.sleep(0.3)
 
@@ -97,6 +97,7 @@ class Controller:
         except:
             if self._debug:
                 print err
+            self._cleanup()
         finally:
             self._finish()
 
