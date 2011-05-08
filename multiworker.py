@@ -73,6 +73,12 @@ class Controller:
             )
             self._workers.append(worker)
 
+    def _cleanup(self):
+        for worker in self._workers:
+            self._print_verbose('killing ' + str(worker))
+            worker.kill()
+            time.sleep(0.3)
+
     def _finish(self):
         self._print_verbose('Finishing ...')
         self._print_verbose(' done !')
