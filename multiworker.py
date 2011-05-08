@@ -75,9 +75,7 @@ class Controller:
 
     def _cleanup(self):
         for worker in self._workers:
-            self._print_verbose('killing ' + str(worker) + '\n')
             worker.kill()
-            time.sleep(0.3)
 
     def _finish(self):
         self._print_verbose('Finishing ...')
@@ -96,9 +94,11 @@ class Controller:
                 self._results.append(self._result_queue.get())
         except KeyboardInterrupt:
             self._cleanup()
-        except:
+        except Exception:
             if self._debug:
                 traceback.print_exc()
+            self._cleanup()
+
         finally:
             self._finish()
 
