@@ -42,7 +42,7 @@ class Worker(multiprocessing.Process):
 
 
 class Controller:
-    def __init__(self, jobs, global_params, num_cpu, verbose, worker_class=Worker):
+    def __init__(self, jobs, global_params, num_cpu, verbose, worker_class=Worker, debug=False):
         self._jobs = jobs
         self._global_params = global_params
         self._num_cpu = num_cpu
@@ -58,6 +58,7 @@ class Controller:
         self._results = []
         self._workers = []
         self._init_workers()
+        self._debug = debug
 
     def _init_workers(self):
         for i in range(self._num_cpu):
@@ -84,8 +85,12 @@ class Controller:
                 worker.start()
             while len(self._results) < self._num_jobs:
                 self._results.append(self._result_queue.get())
+        except KeyboardInterrupt:
+            if self._debug:
+                print 'Manually interrupted'
         except Exception as err:
-            traceback.print_exc()
+            if self._debug:
+                traceback.print_exc()
         finally:
             self._finish()
 
