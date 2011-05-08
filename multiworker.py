@@ -94,10 +94,11 @@ class Controller:
                 self._results.append(self._result_queue.get())
         except KeyboardInterrupt:
             self._cleanup()
+            sys.exit(-1)
         except Exception:
+            self._cleanup()
             if self._debug:
                 traceback.print_exc()
-            self._cleanup()
 
         finally:
             self._finish()
