@@ -27,6 +27,9 @@ class Worker(multiprocessing.Process):
             sys.stdout.write(msg)
             sys.stdout.flush()
 
+    def kill(self):
+        self._kill_received = True
+
     def run(self):
         while not self._kill_received:
             try:
@@ -85,12 +88,9 @@ class Controller:
                 worker.start()
             while len(self._results) < self._num_jobs:
                 self._results.append(self._result_queue.get())
-        except KeyboardInterrupt:
+        except:
             if self._debug:
-                print 'Manually interrupted'
-        except Exception as err:
-            if self._debug:
-                traceback.print_exc()
+                print err
         finally:
             self._finish()
 
