@@ -35,7 +35,7 @@ class Worker(multiprocessing.Process):
             try:
                 job = self._work_queue.get(True, 0.1)
                 self._result_queue.put(self.do(job))
-            except:
+            except (Queue.Empty, KeyboardInterrupt):
                 break
 
     def do(self, job):
@@ -94,10 +94,11 @@ class Controller:
                 worker.start()
             while len(self._results) < self._num_jobs:
                 self._results.append(self._result_queue.get())
+        except KeyboardInterrupt:
+            self._cleanup()
         except:
             if self._debug:
-                print err
-            self._cleanup()
+                traceback.print_exc()
         finally:
             self._finish()
 
