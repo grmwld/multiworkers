@@ -21,5 +21,12 @@ class CustomWorker(Worker):
 if __name__ == '__main__':
     global_params = {'fdsgdf':3, 'kgflgf':5}
     jobs = [{'name':'lskdfjs'}, {'name':'ksljdfs'}, {'name':'ksjdnfs'}, {'name':'ggtuna'}]
-    c = Controller(jobs, global_params, 2, True, CustomWorker)
+    c = Controller(
+        jobs=jobs,
+        global_params=global_params,
+        num_cpu=1,
+        timeout=None,
+        verbose=True,
+        worker_class=CustomWorker,
+        debug=False)
     c.start()
