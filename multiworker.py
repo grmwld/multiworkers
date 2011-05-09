@@ -13,6 +13,10 @@ import traceback
 import numpy
 
 
+class TimeOutException(Exception):
+    pass
+
+
 class Worker(multiprocessing.Process):
     def __init__(self, work_queue, result_queue, verbose, global_params):
         super(Worker, self).__init__()
@@ -29,9 +33,10 @@ class Worker(multiprocessing.Process):
 
     def kill(self):
         self._kill_received = True
+        self.terminate()
 
     def run(self):
-        while (not (self._kill_received)) and (self._work_queue.empty()==False):
+        while not (self._kill_received and self._work_queue.empty()):
             try:
                 job = self._work_queue.get(True, 0.1)
                 self._result_queue.put(self.do(job))
@@ -45,7 +50,7 @@ class Worker(multiprocessing.Process):
 
 
 class Controller:
-    def __init__(self, jobs, global_params, num_cpu, verbose, worker_class=Worker, debug=False):
+    def __init__(self, jobs, global_params, num_cpu=1, timeout=None, verbose=False, worker_class=Worker, debug=False):
         self._jobs = jobs
         self._global_params = global_params
         self._num_cpu = num_cpu
@@ -61,6 +66,7 @@ class Controller:
         self._results = []
         self._workers = []
         self._init_workers()
+        self._timeout = timeout
         self._debug = debug
 
     def _init_workers(self):
@@ -90,16 +96,19 @@ class Controller:
         try:
             for worker in self._workers:
                 worker.start()
+            if self._timeout:
+                start_time = time.time()
             while len(self._results) < self._num_jobs:
                 self._results.append(self._result_queue.get())
-        except KeyboardInterrupt:
+                if self._timeout and time.time()-start_time > self._timeout:
+                    raise TimeOutException
+        except (TimeOutException, KeyboardInterrupt):
             self._cleanup()
             sys.exit(-1)
         except Exception:
             self._cleanup()
             if self._debug:
                 traceback.print_exc()
-
         finally:
             self._finish()
 
