@@ -103,8 +103,6 @@ class Controller:
                 if self._timeout and time.time()-start_time > self._timeout:
                     raise TimeOutException
         except (TimeOutException, KeyboardInterrupt):
-            self._finish()
-            self._cleanup()
             sys.exit(-1)
         except Exception:
             if self._debug:
