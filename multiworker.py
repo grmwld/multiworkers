@@ -10,7 +10,6 @@ import multiprocessing
 import Queue
 import argparse
 import traceback
-import numpy
 
 
 class TimeOutException(Exception):
