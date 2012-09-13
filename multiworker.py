@@ -133,7 +133,9 @@ class Controller:
         return self._progress_message
 
     def update_progress_counts(self):
-        self._progress_counts = '/'.join(map(str, [len(self._results), self._num_jobs]))
+        self._progress_counts = '/'.join(map(str, [
+            len(self._results), self._num_jobs
+        ]))
         return self._progress_counts
 
     def update_progress_workers(self):
