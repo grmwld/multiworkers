@@ -188,17 +188,17 @@ class Controller:
         try:
             for worker in self.workers:
                 worker.start()
-            self.update_progress(one_time=True, daemon=True)
+            if not self.quiet:
+                self.update_progress(one_time=True, daemon=True)
             while self.done_workers < len(self.workers):
-                if not self.quiet:
-                    try:
-                        state = self.current_queue.get_nowait()
-                        if state['time'] is None:
-                            self.done_workers += 1
-                        self.ongoing_work[state['worker']] = state
-                        self.update_progress_workers()
-                    except Queue.Empty:
-                        time.sleep(0.05)
+                try:
+                    state = self.current_queue.get_nowait()
+                    if state['time'] is None:
+                        self.done_workers += 1
+                    self.ongoing_work[state['worker']] = state
+                    self.update_progress_workers()
+                except Queue.Empty:
+                    time.sleep(0.05)
                 try:
                     self.results.append(self.result_queue.get_nowait())
                 except Queue.Empty:
