@@ -78,20 +78,19 @@ class Controller:
         self.quiet = quiet
         self.worker_class = worker_class
         self.work_queue = multiprocessing.Queue()
+        self.debug = debug
+        self.result_queue = multiprocessing.Queue()
+        self.current_queue = multiprocessing.Queue()
         self.num_jobs = 0
         for job in self.jobs:
             job['id'] = self.num_jobs
             self.work_queue.put(job)
             self.num_jobs += 1
-        self.result_queue = multiprocessing.Queue()
         self.results = []
         self.workers = []
         self.ongoing_work = {}
-        self.current_queue = multiprocessing.Queue()
-        self.current = []
         self.init_workers()
         self.done_workers = 0
-        self.debug = debug
         self.progress = ProgressBar('green', width=80, block='█', empty='█')
         self.progress_time = ''
         self.progress_counts = ''
@@ -116,7 +115,6 @@ class Controller:
         if one_time:
             percent = int((len(self.results) / float(self.num_jobs)) * 100)
             self.progress.render(percent, self.update_progress_message())
-            #print self.update_progress_message()
         if daemon and self.done_workers < len(self.workers):
             threading.Timer(
                 interval=.2,
