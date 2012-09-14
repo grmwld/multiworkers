@@ -15,14 +15,14 @@ from progressbar.progressbar import ProgressBar
 class Worker(multiprocessing.Process):
     def __init__(self, work_queue, result_queue, current_queue, global_params):
         super(Worker, self).__init__()
-        self._work_queue = work_queue
-        self._result_queue = result_queue
-        self._current_queue = current_queue
-        self._global_params = global_params
-        self._kill_received = False
+        self.work_queue = work_queue
+        self.result_queue = result_queue
+        self.current_queue = current_queue
+        self.global_params = global_params
+        self.kill_received = False
 
     def kill(self):
-        self._kill_received = True
+        self.kill_received = True
         self.terminate()
 
     def update_progress(self, interval=1):
@@ -33,12 +33,12 @@ class Worker(multiprocessing.Process):
         minutes = '%dm ' % (rd.minutes) if rd.minutes else ''
         seconds = '%ds' % (rd.seconds)
         elapsed = ''.join([days, hours, minutes, seconds])
-        self._current_queue.put({
+        self.current_queue.put({
             'job': self.job,
             'worker': self.name,
             'time': elapsed
         })
-        self._looper = threading.Timer(
+        self.looper = threading.Timer(
             interval=interval,
             function=self.update_progress,
             kwargs={'interval': interval}
@@ -48,17 +48,17 @@ class Worker(multiprocessing.Process):
         self.iTime = datetime.datetime.fromtimestamp(time.time())
         self.job = None
         self.update_progress()
-        while not self._kill_received:
+        while not self.kill_received:
             try:
-                self.job = self._work_queue.get(True)
+                self.job = self.work_queue.get(True)
                 self.iTime = datetime.datetime.fromtimestamp(time.time())
                 if self.job is None:
                     raise Queue.Empty
                 result = self.do(self.job)
-                self._result_queue.put(result)
+                self.result_queue.put(result)
             except (Queue.Empty, KeyboardInterrupt):
                 break
-        self._current_queue.put({
+        self.current_queue.put({
             'job': self.job,
             'worker': self.name,
             'time': None
@@ -72,75 +72,75 @@ class Worker(multiprocessing.Process):
 class Controller:
     def __init__(self, jobs, global_params, num_cpu=1, quiet=False,
                  worker_class=Worker, debug=False):
-        self._jobs = jobs
-        self._global_params = global_params
-        self._num_cpu = num_cpu
-        self._quiet = quiet
-        self._worker_class = worker_class
-        self._work_queue = multiprocessing.Queue()
-        self._num_jobs = 0
-        for job in self._jobs:
-            job['id'] = self._num_jobs
-            self._work_queue.put(job)
-            self._num_jobs += 1
-        self._result_queue = multiprocessing.Queue()
-        self._results = []
-        self._workers = []
-        self._ongoing_work = {}
-        self._current_queue = multiprocessing.Queue()
-        self._current = []
-        self._init_workers()
-        self._done_workers = 0
-        self._debug = debug
-        self._progress = ProgressBar('green', width=80, block='█', empty='█')
-        self._progress_time = ''
-        self._progress_counts = ''
-        self._progress_workers = ''
-        self._progress_message = ''
+        self.jobs = jobs
+        self.global_params = global_params
+        self.num_cpu = num_cpu
+        self.quiet = quiet
+        self.worker_class = worker_class
+        self.work_queue = multiprocessing.Queue()
+        self.num_jobs = 0
+        for job in self.jobs:
+            job['id'] = self.num_jobs
+            self.work_queue.put(job)
+            self.num_jobs += 1
+        self.result_queue = multiprocessing.Queue()
+        self.results = []
+        self.workers = []
+        self.ongoing_work = {}
+        self.current_queue = multiprocessing.Queue()
+        self.current = []
+        self.init_workers()
+        self.done_workers = 0
+        self.debug = debug
+        self.progress = ProgressBar('green', width=80, block='█', empty='█')
+        self.progress_time = ''
+        self.progress_counts = ''
+        self.progress_workers = ''
+        self.progress_message = ''
         self.abs_iTime = time.time()
         self.iTime = datetime.datetime.fromtimestamp(self.abs_iTime)
 
-    def _init_workers(self):
-        for i in range(self._num_cpu):
-            worker = self._worker_class(
-                self._work_queue,
-                self._result_queue,
-                self._current_queue,
-                self._global_params,
+    def init_workers(self):
+        for i in range(self.num_cpu):
+            worker = self.worker_class(
+                self.work_queue,
+                self.result_queue,
+                self.current_queue,
+                self.global_params,
             )
-            self._workers.append(worker)
-            self._work_queue.put(None)
-            self._ongoing_work[worker.name] = {}
+            self.workers.append(worker)
+            self.work_queue.put(None)
+            self.ongoing_work[worker.name] = {}
 
-    def _update_progress(self, one_time=True, daemon=False):
+    def update_progress(self, one_time=True, daemon=False):
         if one_time:
-            percent = int((len(self._results) / float(self._num_jobs)) * 100)
-            self._progress.render(percent, self.update_progress_message())
+            percent = int((len(self.results) / float(self.num_jobs)) * 100)
+            self.progress.render(percent, self.update_progress_message())
             #print self.update_progress_message()
-        if daemon and self._done_workers != len(self._workers):
+        if daemon and self.done_workers < len(self.workers):
             threading.Timer(
-                interval=0.3,
-                function=self._update_progress,
+                interval=.2,
+                function=self.update_progress,
                 kwargs={'daemon': daemon, 'one_time': True}
             ).start()
 
     def update_progress_message(self):
-        self._progress_message = '\n'.join([
+        self.progress_message = '\n'.join([
             self.update_progress_counts(), '\n',
-            self._progress_workers, '\n',
-            self.update_progress_time()
+            self.progress_workers, '\n',
+            self.update_progress_time(), '\n'
         ])
-        return self._progress_message
+        return self.progress_message
 
     def update_progress_counts(self):
-        self._progress_counts = '/'.join(map(str, [
-            len(self._results), self._num_jobs
+        self.progress_counts = '/'.join(map(str, [
+            len(self.results), self.num_jobs
         ]))
-        return self._progress_counts
+        return self.progress_counts
 
     def update_progress_workers(self):
-        rows = [['Worker', 'Job ID', 'Time'], [''] * 3]
-        for w, s in self._ongoing_work.items():
+        rows = [[' ' * 20 + 'Worker', 'Job ID', 'Time'], [''] * 3]
+        for w, s in self.ongoing_work.items():
             if s and s['job']:
                 rows.append([s['worker'], s['job']['id'], s['time']])
             else:
@@ -148,10 +148,10 @@ class Controller:
         cols = zip(*rows)
         col_widths = [max(len(str(value)) for value in col) for col in cols]
         formatt = '\t\t'.join(['%%%ds' % width for width in col_widths])
-        self._progress_workers = '\n'.join([
+        self.progress_workers = '\n'.join([
             formatt % tuple(row) for row in rows
         ])
-        return self._progress_workers
+        return self.progress_workers
 
     def update_progress_time(self):
         time_tick = time.time()
@@ -161,26 +161,26 @@ class Controller:
         ehours = '%d hours, ' % (rd.hours) if rd.hours else ''
         eminutes = '%d minutes, ' % (rd.minutes) if rd.minutes else ''
         eseconds = '%d seconds' % (rd.seconds)
-        len_res = len(self._results)
+        len_res = len(self.results)
         if len_res == 0:
             speed = 0.05
         else:
             speed = len_res / (time_tick - self.abs_iTime)
-        time_remaining = (self._num_jobs - len(self._results)) / speed
+        time_remaining = (self.num_jobs - len(self.results)) / speed
         rt = datetime.datetime.fromtimestamp(time_remaining)
         rdays = '%d days, ' % (rt.day) if rd.days else ''
         rhours = '%d hours, ' % (rt.hour) if rd.hours else ''
         rminutes = '%d minutes, ' % (rt.minute) if rd.minutes else ''
         rseconds = '%d seconds' % (rt.second)
-        self._progress_elapsed = ''.join([
+        self.progress_elapsed = ''.join([
             'Elapsed time : ', edays, ehours, eminutes, eseconds,
             '\t\t',
             'Estimated remaining time : ', rdays, rhours, rminutes, rseconds
         ])
-        return self._progress_elapsed
+        return self.progress_elapsed
 
     def cleanup(self):
-        for worker in self._workers:
+        for worker in self.workers:
             worker.kill()
 
     def finish(self):
@@ -188,32 +188,69 @@ class Controller:
 
     def start(self):
         try:
-            for worker in self._workers:
+            for worker in self.workers:
                 worker.start()
-            self._update_progress(one_time=True, daemon=True)
-            while len(self._results) < self._num_jobs:
-                if not self._quiet and self._done_workers != len(self._workers):
+            self.update_progress(one_time=True, daemon=True)
+            while self.done_workers < len(self.workers):
+                if not self.quiet:
                     try:
-                        state = self._current_queue.get_nowait()
+                        state = self.current_queue.get_nowait()
                         if state['time'] is None:
-                            self._done_workers += 1
-                        self._ongoing_work[state['worker']] = state
+                            self.done_workers += 1
+                        self.ongoing_work[state['worker']] = state
                         self.update_progress_workers()
                     except Queue.Empty:
-                        pass
+                        time.sleep(0.05)
                 try:
-                    self._results.append(self._result_queue.get_nowait())
+                    self.results.append(self.result_queue.get_nowait())
                 except Queue.Empty:
                     time.sleep(0.05)
-                    continue
-            self.update_progress_workers()
-            self._update_progress()
+            #self.update_progress_workers()
+            #self.update_progress()
         except KeyboardInterrupt:
             sys.exit(-1)
         except Exception:
-            if self._debug:
+            if self.debug:
                 traceback.print_exc()
         finally:
+            time.sleep(1)
             self.finish()
-            if not self._debug:
+            if not self.debug:
                 self.cleanup()
+
+
+def main():
+
+    c = CustomController(
+        jobs=[{'name': str(hex(i)), 'value': i} for i in range(100)],
+        global_params={},
+        num_cpu=multiprocessing.cpu_count(),
+        quiet=False,
+        worker_class=CustomWorker,
+        debug=True
+    )
+    c.start()
+
+
+if __name__ == '__main__':
+
+    import random
+
+    class CustomWorker(Worker):
+        def __init__(self, work_queue, result_queue, current_queue, global_params):
+            Worker.__init__(self, work_queue, result_queue, current_queue, global_params)
+
+        def do(self, job):
+            result = {'transformed_value': job['value'] ** 2.3 + 3.4}
+            time.sleep(0.5 + random.random())
+            return result
+
+    class CustomController(Controller):
+        def __init__(self, jobs, global_params, num_cpu, quiet, worker_class, debug):
+            Controller.__init__(self, jobs, global_params, num_cpu, quiet, worker_class, debug)
+
+        def finish(self):
+            output = sum(result['transformed_value'] for result in self.results)
+            print output
+
+    main()
