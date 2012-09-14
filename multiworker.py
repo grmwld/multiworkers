@@ -3,11 +3,11 @@
 
 import sys
 import time
-import datetime
 import threading
 import multiprocessing
 import Queue
 import traceback
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from progressbar.progressbar import ProgressBar
 
@@ -26,7 +26,7 @@ class Worker(multiprocessing.Process):
         self.terminate()
 
     def update_progress(self, interval=1):
-        tick = datetime.datetime.fromtimestamp(time.time())
+        tick = datetime.fromtimestamp(time.time())
         rd = relativedelta(tick, self.iTime)
         days = '%dd ' % (rd.days) if rd.days else ''
         hours = '%dh ' % (rd.hours) if rd.hours else ''
@@ -45,13 +45,13 @@ class Worker(multiprocessing.Process):
         ).start()
 
     def run(self):
-        self.iTime = datetime.datetime.fromtimestamp(time.time())
+        self.iTime = datetime.fromtimestamp(time.time())
         self.job = None
         self.update_progress()
         while not self.kill_received:
             try:
                 self.job = self.work_queue.get(True)
-                self.iTime = datetime.datetime.fromtimestamp(time.time())
+                self.iTime = datetime.fromtimestamp(time.time())
                 if self.job is None:
                     raise Queue.Empty
                 result = self.do(self.job)
@@ -97,7 +97,7 @@ class Controller:
         self.progress_workers = ''
         self.progress_message = ''
         self.abs_iTime = time.time()
-        self.iTime = datetime.datetime.fromtimestamp(self.abs_iTime)
+        self.iTime = datetime.fromtimestamp(self.abs_iTime)
 
     def init_workers(self):
         for i in range(self.num_cpu):
@@ -153,23 +153,23 @@ class Controller:
 
     def update_progress_time(self):
         time_tick = time.time()
-        tick = datetime.datetime.fromtimestamp(time_tick)
+        tick = datetime.fromtimestamp(time_tick)
         rd = relativedelta(tick, self.iTime)
         edays = '%d days, ' % (rd.days) if rd.days else ''
         ehours = '%d hours, ' % (rd.hours) if rd.hours else ''
         eminutes = '%d minutes, ' % (rd.minutes) if rd.minutes else ''
         eseconds = '%d seconds' % (rd.seconds)
         len_res = len(self.results)
-        if len_res == 0:
-            speed = 0.05
-        else:
+        speed = 1
+        if len_res != 0:
             speed = len_res / (time_tick - self.abs_iTime)
-        time_remaining = (self.num_jobs - len(self.results)) / speed
-        rt = datetime.datetime.fromtimestamp(time_remaining)
-        rdays = '%d days, ' % (rt.day) if rd.days else ''
-        rhours = '%d hours, ' % (rt.hour) if rd.hours else ''
-        rminutes = '%d minutes, ' % (rt.minute) if rd.minutes else ''
-        rseconds = '%d seconds' % (rt.second)
+        remaining_time = (self.num_jobs - len(self.results)) / speed
+        end_time = datetime.fromtimestamp(time_tick + remaining_time)
+        rt = relativedelta(end_time, tick)
+        rdays = '%d days, ' % (rt.days) if rt.days else ''
+        rhours = '%d hours, ' % (rt.hours) if rt.hours else ''
+        rminutes = '%d minutes, ' % (rt.minutes) if rt.minutes else ''
+        rseconds = '%d seconds' % (rt.seconds)
         self.progress_elapsed = ''.join([
             '\t', 'Elapsed time : ', edays, ehours, eminutes, eseconds,
             '\t\t',
