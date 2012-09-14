@@ -171,7 +171,7 @@ class Controller:
         rminutes = '%d minutes, ' % (rt.minutes) if rt.minutes else ''
         rseconds = '%d seconds' % (rt.seconds)
         self.progress_elapsed = ''.join([
-            '\t', 'Elapsed time : ', edays, ehours, eminutes, eseconds,
+            ' ' * 3, 'Elapsed time : ', edays, ehours, eminutes, eseconds,
             '\t\t',
             'Estimated remaining time : ', rdays, rhours, rminutes, rseconds
         ])
