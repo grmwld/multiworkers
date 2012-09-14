@@ -91,7 +91,7 @@ class Controller:
         self.ongoing_work = {}
         self.init_workers()
         self.done_workers = 0
-        self.progress = ProgressBar('green', width=80, block='█', empty='█')
+        self.progress = ProgressBar('green', width=80, block='█', empty='░')
         self.progress_time = ''
         self.progress_counts = ''
         self.progress_workers = ''
@@ -203,8 +203,6 @@ class Controller:
                     self.results.append(self.result_queue.get_nowait())
                 except Queue.Empty:
                     time.sleep(0.05)
-            #self.update_progress_workers()
-            #self.update_progress()
         except KeyboardInterrupt:
             sys.exit(-1)
         except Exception:
