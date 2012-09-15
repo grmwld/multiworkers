@@ -96,6 +96,7 @@ class Controller:
         self.progress_counts = ''
         self.progress_workers = ''
         self.progress_message = ''
+        self.progress_premessage = ''
         self.abs_iTime = time.time()
         self.iTime = datetime.fromtimestamp(self.abs_iTime)
 
@@ -114,13 +115,17 @@ class Controller:
     def update_progress(self, one_time=True, daemon=False):
         if one_time:
             percent = int((len(self.results) / float(self.num_jobs)) * 100)
-            self.progress.render(percent, self.update_progress_message())
+            self.progress.render(percent, self.update_progress_message(),
+                                 self.update_progress_premessage())
         if daemon and self.done_workers < len(self.workers):
             threading.Timer(
                 interval=.2,
                 function=self.update_progress,
                 kwargs={'daemon': daemon, 'one_time': True}
             ).start()
+
+    def update_progress_premessage(self):
+        return self.progress_premessage
 
     def update_progress_message(self):
         self.progress_message = '\n'.join([
