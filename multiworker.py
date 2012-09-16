@@ -55,6 +55,7 @@ class Worker(multiprocessing.Process):
                 if self.job is None:
                     raise Queue.Empty
                 result = self.do(self.job)
+                time.sleep(0.01)
                 self.result_queue.put(result)
             except (Queue.Empty, KeyboardInterrupt):
                 break
@@ -203,11 +204,11 @@ class Controller:
                     self.ongoing_work[state['worker']] = state
                     self.update_progress_workers()
                 except Queue.Empty:
-                    time.sleep(0.05)
+                    pass
                 try:
                     self.results.append(self.result_queue.get_nowait())
                 except Queue.Empty:
-                    time.sleep(0.05)
+                    pass
         except KeyboardInterrupt:
             sys.exit(-1)
         except Exception:
