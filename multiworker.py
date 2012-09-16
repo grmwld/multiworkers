@@ -96,6 +96,7 @@ class Controller:
         self.progress_counts = ''
         self.progress_workers = ''
         self.progress_message = ''
+        self.progress_premessage = ''
         self.abs_iTime = time.time()
         self.iTime = datetime.fromtimestamp(self.abs_iTime)
 
@@ -114,13 +115,17 @@ class Controller:
     def update_progress(self, one_time=True, daemon=False):
         if one_time:
             percent = int((len(self.results) / float(self.num_jobs)) * 100)
-            self.progress.render(percent, self.update_progress_message())
+            self.progress.render(percent, self.update_progress_message(),
+                                 self.update_progress_premessage())
         if daemon and self.done_workers < len(self.workers):
             threading.Timer(
                 interval=.2,
                 function=self.update_progress,
                 kwargs={'daemon': daemon, 'one_time': True}
             ).start()
+
+    def update_progress_premessage(self):
+        return self.progress_premessage
 
     def update_progress_message(self):
         self.progress_message = '\n'.join([
@@ -171,7 +176,7 @@ class Controller:
         rminutes = '%d minutes, ' % (rt.minutes) if rt.minutes else ''
         rseconds = '%d seconds' % (rt.seconds)
         self.progress_elapsed = ''.join([
-            '\t', 'Elapsed time : ', edays, ehours, eminutes, eseconds,
+            ' ' * 3, 'Elapsed time : ', edays, ehours, eminutes, eseconds,
             '\t\t',
             'Estimated remaining time : ', rdays, rhours, rminutes, rseconds
         ])
@@ -188,17 +193,17 @@ class Controller:
         try:
             for worker in self.workers:
                 worker.start()
-            self.update_progress(one_time=True, daemon=True)
+            if not self.quiet:
+                self.update_progress(one_time=True, daemon=True)
             while self.done_workers < len(self.workers):
-                if not self.quiet:
-                    try:
-                        state = self.current_queue.get_nowait()
-                        if state['time'] is None:
-                            self.done_workers += 1
-                        self.ongoing_work[state['worker']] = state
-                        self.update_progress_workers()
-                    except Queue.Empty:
-                        time.sleep(0.05)
+                try:
+                    state = self.current_queue.get_nowait()
+                    if state['time'] is None:
+                        self.done_workers += 1
+                    self.ongoing_work[state['worker']] = state
+                    self.update_progress_workers()
+                except Queue.Empty:
+                    time.sleep(0.05)
                 try:
                     self.results.append(self.result_queue.get_nowait())
                 except Queue.Empty:
