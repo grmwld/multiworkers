@@ -1,4 +1,9 @@
 
+1.1.2 / 2012-09-16 
+==================
+
+  * Fix synchronisation between progress bar and workers info
+
 1.1.1 / 2012-09-16 
 ==================
 
