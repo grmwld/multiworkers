@@ -209,6 +209,9 @@ class Controller:
                     self.results.append(self.result_queue.get_nowait())
                 except Queue.Empty:
                     pass
+            self.update_progress_workers()
+            if not self.quiet:
+                self.update_progress(one_time=True, daemon=False)
         except KeyboardInterrupt:
             sys.exit(-1)
         except Exception:
