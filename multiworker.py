@@ -45,13 +45,13 @@ class Worker(multiprocessing.Process):
         ).start()
 
     def run(self):
-        self.iTime = datetime.fromtimestamp(time.time())
+        #self.iTime = datetime.fromtimestamp(time.time())
         self.job = None
-        self.update_progress()
+        #self.update_progress()
         while not self.kill_received:
             try:
                 self.job = self.work_queue.get(True)
-                self.iTime = datetime.fromtimestamp(time.time())
+                #self.iTime = datetime.fromtimestamp(time.time())
                 if self.job is None:
                     raise Queue.Empty
                 result = self.do(self.job)
@@ -59,11 +59,11 @@ class Worker(multiprocessing.Process):
                 self.result_queue.put(result)
             except (Queue.Empty, KeyboardInterrupt):
                 break
-        self.current_queue.put({
-            'job': self.job,
-            'worker': self.name,
-            'time': None
-        })
+        #self.current_queue.put({
+            #'job': self.job,
+            #'worker': self.name,
+            #'time': None
+        #})
         return
 
     def do(self, job):
@@ -91,7 +91,7 @@ class Controller:
         self.workers = []
         self.ongoing_work = {}
         self.init_workers()
-        self.done_workers = 0
+        self.done = False
         self.progress = ProgressBar('green', width=80, block='█', empty='░')
         self.progress_time = ''
         self.progress_counts = ''
@@ -118,7 +118,7 @@ class Controller:
             percent = int((len(self.results) / float(self.num_jobs)) * 100)
             self.progress.render(percent, self.update_progress_message(),
                                  self.update_progress_premessage())
-        if daemon and self.done_workers < len(self.workers):
+        if daemon and not self.done:
             threading.Timer(
                 interval=.2,
                 function=self.update_progress,
@@ -131,7 +131,7 @@ class Controller:
     def update_progress_message(self):
         self.progress_message = '\n'.join([
             self.update_progress_counts(), '\n',
-            self.progress_workers, '\n',
+            #self.progress_workers, '\n',
             self.update_progress_time(), '\n'
         ])
         return self.progress_message
@@ -196,20 +196,24 @@ class Controller:
                 worker.start()
             if not self.quiet:
                 self.update_progress(one_time=True, daemon=True)
-            while self.done_workers < len(self.workers):
-                try:
-                    state = self.current_queue.get_nowait()
-                    if state['time'] is None:
-                        self.done_workers += 1
-                    self.ongoing_work[state['worker']] = state
-                    self.update_progress_workers()
-                except Queue.Empty:
-                    pass
+            #while self.done_workers < len(self.workers):
+            while True:
+                #try:
+                    #state = self.current_queue.get_nowait()
+                    #if state['time'] is None:
+                        #self.done_workers += 1
+                    #self.ongoing_work[state['worker']] = state
+                    #self.update_progress_workers()
+                #except Queue.Empty:
+                    #pass
+                self.done = len(self.results) >= self.num_jobs
+                if self.done:
+                    break
                 try:
                     self.results.append(self.result_queue.get_nowait())
                 except Queue.Empty:
-                    pass
-            self.update_progress_workers()
+                    time.sleep(0.05)
+            #self.update_progress_workers()
             if not self.quiet:
                 self.update_progress(one_time=True, daemon=False)
         except KeyboardInterrupt:
